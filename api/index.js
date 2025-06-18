@@ -11,7 +11,7 @@ const { PORT } = process.env;
 
 // ✅ MIDDLEWARE CORS — deve vir antes das rotas
 app.use(cors({
-  origin: "http://http://18.215.24.30/", // ou '*' para liberar tudo (apenas para testes)
+  origin: "http://18.215.24.30/", // ou '*' para liberar tudo (apenas para testes)
   credentials: true,
 }));
 
