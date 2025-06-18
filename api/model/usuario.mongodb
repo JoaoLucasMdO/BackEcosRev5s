@@ -1,0 +1,12 @@
+use('EcosRev')
+db.usuarios.insertOne({
+    'nome': 'Mateus Ferreira',
+    'email': 'sandman2871@gmail.com',
+    'senha': 'Mateus123#',
+    'ativo': true,
+    'tipo': 'Admin',
+    'pontos': 100
+})
+//Criando um índice único
+use('EcosRev')
+db.usuarios.createIndex({'email':1},{unique:true})

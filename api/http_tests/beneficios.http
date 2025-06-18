@@ -1,0 +1,66 @@
+// Teste da API REST de benefícios
+@baseURL = http://localhost:4000/api/beneficio
+
+// GET - Lista todos os benefícios
+GET {{baseURL}}
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY1ZTYwZmM5ZmVlNzc4MjIwZGNkZTY0IiwidGlwbyI6IkNsaWVudGUifSwiaWF0IjoxNzE3NjIzNjk0LCJleHAiOjE3MTc3MTAwOTR9.Y43SVrtKRf3CKcyExoui9e_WIWpgxL0CcIPxbH_gPgc
+
+###
+// GET - Lista o benefício pelo ID
+GET {{baseURL}}/id/6626e3bdca7839f56bac56bb
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY0NTUzNDY3OTBiYWI0YzhkNTNiNGFhIiwidGlwbyI6IkFkbWluIn0sImlhdCI6MTcxNzI2MzY5MSwiZXhwIjoxNzE3MzUwMDkxfQ.B8c_os7XTlsBMAa_enkFmhXugPchU4Jf4GkCOVITqak
+
+###
+// GET - Lista o benefício pelo nome
+GET {{baseURL}}/nome/RBD
+Content-Type: application/json
+access-token: etJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjYzOTVmMDZiZGIxYTQyMzcyMGRjZmEyIn0sImlhdCI6MTcxNTAzNzIwMywiZXhwIjoxNzE1MTIzNjAzfQ.l76Ccoiw-_2ZfYD23SYfrGiD-1_CifmbKC0Edch-2UI
+
+###
+// DELETE - Remove o benefício pelo id
+DELETE {{baseURL}}/6625b01d246cdbba06c38010
+Content-Type: application/json
+access-token: etJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjYzOTVmMDZiZGIxYTQyMzcyMGRjZmEyIn0sImlhdCI6MTcxNTAzNzIwMywiZXhwIjoxNzE1MTIzNjAzfQ.l76Ccoiw-_2ZfYD23SYfrGiD-1_CifmbKC0Edch-2UI
+
+###
+// POST - Insere um novo benefício
+POST {{baseURL}}
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY1ZTYwZmM5ZmVlNzc4MjIwZGNkZTY0IiwidGlwbyI6IkNsaWVudGUifSwiaWF0IjoxNzE3ODc0NTI4LCJleHAiOjE3MTc5NjA5Mjh9.KlgyIz0WWtd3naKCYTbBmtiCnblkoU54icDtnIYSFvQ
+
+{
+    "nome": "Show do Matue",
+    "data": "2024-12-12",
+    "endereco":"Av 31 de março",
+    "pontos": 200,
+    "quantidade": 32
+} 
+
+###
+// PUT - Altera um benefício já existente
+
+PUT {{baseURL}}
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY0NTUzNDY3OTBiYWI0YzhkNTNiNGFhIn0sImlhdCI6MTcxNjEzNDIyMSwiZXhwIjoxNzE2MjIwNjIxfQ.KJ_KWJr9T8IiR5ItmvlPouoJB1x-rf0E3kQY85h8c_Y
+
+{
+    "_id": "6626f79e35fe58b15fb70ad7",
+    "nome": "Show do RBD",
+    "data": "2024-12-12",
+    "endereco": "Av 31 de março",
+    "pontos": 300,
+    "quantidade": 30
+  }
+
+###
+
+PUT {{baseURL}}/resgate
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY1ZTYwZmM5ZmVlNzc4MjIwZGNkZTY0IiwidGlwbyI6IkNsaWVudGUifSwiaWF0IjoxNzE3NjIzNjk0LCJleHAiOjE3MTc3MTAwOTR9.Y43SVrtKRf3CKcyExoui9e_WIWpgxL0CcIPxbH_gPgc
+
+  {
+    "_id": "6626f79e35fe58b15fb70ad7",
+    "quantidade": 19
+  }

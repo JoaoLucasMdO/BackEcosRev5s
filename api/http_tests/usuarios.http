@@ -1,0 +1,65 @@
+// Teste do endpoint dos usuários
+@baseURL = http://localhost:3000/api/usuario
+
+###
+POST {{baseURL}}
+Content-Type: application/json
+
+{
+    "nome": "Mateus",
+    "email": "teste@gmail.com",
+    "senha": "Teste123@",
+    "tipo": "Cliente",
+    "pontos": 300
+}
+
+###
+// GET - Lista todos os usuários
+GET {{baseURL}}
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY0NTUzNDY3OTBiYWI0YzhkNTNiNGFhIiwidGlwbyI6IkFkbWluIn0sImlhdCI6MTc0ODM3ODgwNywiZXhwIjoxNzQ4NDY1MjA3fQ.0B1uIR7aTKuBAuvnHCjg5rAJeCK3LiyfYxnT14zjXeQ
+
+###
+
+GET {{baseURL}}/me
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY0NTUzNDY3OTBiYWI0YzhkNTNiNGFhIiwidGlwbyI6IkFkbWluIn0sImlhdCI6MTc0NjY0MDQ4OSwiZXhwIjoxNzQ2NzI2ODg5fQ.N0Aws-DT00qPEhwL0uAHDORlEHSjnsNCSJUbiWoZISM
+
+
+###
+// POST - Efetua o login
+POST {{baseURL}}/login
+Content-Type: application/json
+
+{
+    "email": "sandman2871@gmail.com",
+    "senha": "Mateus123#"
+}
+
+###
+GET {{baseURL}}/id/66455346790bab4c8d53b4aa
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY1ZTYwZmM5ZmVlNzc4MjIwZGNkZTY0IiwidGlwbyI6IkNsaWVudGUifSwiaWF0IjoxNzE3ODc0NTI4LCJleHAiOjE3MTc5NjA5Mjh9.KlgyIz0WWtd3naKCYTbBmtiCnblkoU54icDtnIYSFvQ
+
+
+###
+GET {{baseURL}}/pontos
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY0NTUzNDY3OTBiYWI0YzhkNTNiNGFhIiwidGlwbyI6IkFkbWluIn0sImlhdCI6MTcxNzYyMzU2MiwiZXhwIjoxNzE3NzA5OTYyfQ.97oaMVJjtF5maglMRRPrGCQVUlOKwfTF7mIJ82DS0m8
+
+
+###
+
+PUT {{baseURL}}/pontos
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY1ZTYwZmM5ZmVlNzc4MjIwZGNkZTY0IiwidGlwbyI6IkNsaWVudGUifSwiaWF0IjoxNzE3NjIzNjk0LCJleHAiOjE3MTc3MTAwOTR9.Y43SVrtKRf3CKcyExoui9e_WIWpgxL0CcIPxbH_gPgc
+
+{
+    "pontos": 600
+  }
+
+###
+
+DELETE {{baseURL}}/66677d6e0e8c41e981fb6ec4
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY2NzdjZjgwZThjNDFlOTgxZmI2ZWJkIiwidGlwbyI6IkNsaWVudGUifSwiaWF0IjoxNzE4MDYwMzE2LCJleHAiOjE3MTgxNDY3MTZ9.JjilH0-i9kJ-sWG_Bpc5jQ0VDaG-wuCx3K1MMO6zn7I
