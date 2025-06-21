@@ -3,6 +3,7 @@ import { connectToDatabase } from "../utils/mongodb.js";
 import { check, validationResult } from "express-validator";
 import auth from "../middleware/auth.js";
 import { isAfter } from "date-fns";
+import logger from "../config/logger.js"; // Adicione o logger
 
 const router = express.Router();
 const { db, ObjectId } = await connectToDatabase();
@@ -58,21 +59,9 @@ const validaQuantidade = [
     .withMessage("A quantidade não pode ser negativa"),
 ];
 
-/**
- * GET /api/beneficios
- * Lista todos os benefícios
- * Parâmetros: limit, skip e order
- */
+// GET todos os benefícios
 router.get("/", auth, async (req, res) => {
-  /*
-            #swagger.tags = ['Benefícios']
-            #swagger.summary = 'GET recebendo todos os benefícios'
-            #swagger.description = 'Função chamada para executar o GET com todos os benefícios a ser exibido'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
-  const { limit, skip, order } = req.query; //Obter da URL
+  const { limit, skip, order } = req.query;
   try {
     const docs = [];
     await db
@@ -84,8 +73,18 @@ router.get("/", auth, async (req, res) => {
       .forEach((doc) => {
         docs.push(doc);
       });
+    logger.info({
+      message: "Listagem de benefícios consultada",
+      quantidade: docs.length,
+      rota: "/beneficio"
+    });
     res.status(200).json(docs);
   } catch (err) {
+    logger.error({
+      message: "Erro ao obter a listagem dos benefícios",
+      error: err.message,
+      rota: "/beneficio"
+    });
     res.status(500).json({
       message: "Erro ao obter a listagem dos benefícios",
       error: `${err.message}`,
@@ -93,16 +92,9 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+// GET benefícios com filtro gt
 router.get("/gt", auth, async (req, res) => {
-  /*
-            #swagger.tags = ['Benefícios']
-            #swagger.summary = 'GET recebendo todos os benefícios com filtros'
-            #swagger.description = 'Função chamada para executar o GET com todos os benefícios a ser exibido utilizando um filtro'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
-  const { limit, skip, order } = req.query; //Obter da URL
+  const { limit, skip, order } = req.query;
   try {
     const docs = [];
     await db
@@ -114,8 +106,18 @@ router.get("/gt", auth, async (req, res) => {
       .forEach((doc) => {
         docs.push(doc);
       });
+    logger.info({
+      message: "Listagem de benefícios (filtro gt) consultada",
+      quantidade: docs.length,
+      rota: "/beneficio/gt"
+    });
     res.status(200).json(docs);
   } catch (err) {
+    logger.error({
+      message: "Erro ao obter a listagem dos benefícios (filtro gt)",
+      error: err.message,
+      rota: "/beneficio/gt"
+    });
     res.status(500).json({
       message: "Erro ao obter a listagem dos benefícios",
       error: `${err.message}`,
@@ -123,20 +125,8 @@ router.get("/gt", auth, async (req, res) => {
   }
 });
 
-/**
- * GET /api/beneficios/id/:id
- * Lista o benefício pelo id
- * Parâmetros: id
- */
+// GET benefício por ID
 router.get("/id/:id", auth, async (req, res) => {
-  /*
-            #swagger.tags = ['Benefícios']
-            #swagger.summary = 'GET recebendo um benefício pelo ID'
-            #swagger.description = 'Função chamada para executar o GET exibindo apenas um único benefício pelo seu ID'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
   try {
     const docs = [];
     await db
@@ -145,8 +135,19 @@ router.get("/id/:id", auth, async (req, res) => {
       .forEach((doc) => {
         docs.push(doc);
       });
+    logger.info({
+      message: "Benefício consultado pelo ID",
+      id: req.params.id,
+      rota: "/beneficio/id/:id"
+    });
     res.status(200).json(docs);
   } catch (err) {
+    logger.error({
+      message: "Erro ao obter o benefício pelo ID",
+      error: err.message,
+      id: req.params.id,
+      rota: "/beneficio/id/:id"
+    });
     res.status(500).json({
       errors: [
         {
@@ -158,20 +159,9 @@ router.get("/id/:id", auth, async (req, res) => {
     });
   }
 });
-/**
- * GET /api/beneficios/razao/:filtor
- * Lista o benefício pelo nome
- * Parâmetros: filtro
- */
+
+// GET benefício por nome/filtro
 router.get("/nome/:filtro", auth, async (req, res) => {
-  /*
-            #swagger.tags = ['Benefícios']
-            #swagger.summary = 'GET recebendo todos os benefícios com filtros'
-            #swagger.description = 'Função chamada para executar o GET com todos os benefícios a ser exibido utilizando um filtro'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
   try {
     const filtro = req.params.filtro.toString();
     const docs = [];
@@ -183,8 +173,20 @@ router.get("/nome/:filtro", auth, async (req, res) => {
       .forEach((doc) => {
         docs.push(doc);
       });
+    logger.info({
+      message: "Benefícios consultados por filtro de nome",
+      filtro,
+      quantidade: docs.length,
+      rota: "/beneficio/nome/:filtro"
+    });
     res.status(200).json(docs);
   } catch (err) {
+    logger.error({
+      message: "Erro ao obter o benefício pelo nome",
+      error: err.message,
+      filtro: req.params.filtro,
+      rota: "/beneficio/nome/:filtro"
+    });
     res.status(500).json({
       errors: [
         {
@@ -196,83 +198,89 @@ router.get("/nome/:filtro", auth, async (req, res) => {
     });
   }
 });
-/**
- * DELETE /api/beneficios/:id
- * Remove os benefícios pelo id
- * Parâmetros: id
- */
+
+// DELETE benefício por ID
 router.delete("/:id", auth, async (req, res) => {
-  /*
-            #swagger.tags = ['Benefícios']
-            #swagger.summary = 'DELETE recebendo um benefício pelo ID'
-            #swagger.description = 'Função chamada para executar o DELETE de apenas um benefício pelo seu ID'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
-  const result = await db.collection(nomeCollection).deleteOne({
-    _id: { $eq: new ObjectId(req.params.id) },
-  });
-  if (result.deletedCount === 0) {
-    res.status(404).json({
-      errors: [
-        {
-          value: `Não há nenhum benefício com o id ${req.params.id}`,
-          msg: "Erro ao excluir o benefício",
-          param: "/:id",
-        },
-      ],
+  try {
+    const result = await db.collection(nomeCollection).deleteOne({
+      _id: { $eq: new ObjectId(req.params.id) },
     });
-  } else {
-    res.status(200).send(result);
+    if (result.deletedCount === 0) {
+      logger.warn({
+        message: "Tentativa de exclusão de benefício não encontrado",
+        id: req.params.id,
+        rota: "/beneficio/:id"
+      });
+      res.status(404).json({
+        errors: [
+          {
+            value: `Não há nenhum benefício com o id ${req.params.id}`,
+            msg: "Erro ao excluir o benefício",
+            param: "/:id",
+          },
+        ],
+      });
+    } else {
+      logger.info({
+        message: "Benefício excluído com sucesso",
+        id: req.params.id,
+        rota: "/beneficio/:id"
+      });
+      res.status(200).send(result);
+    }
+  } catch (err) {
+    logger.error({
+      message: "Erro ao excluir benefício",
+      error: err.message,
+      id: req.params.id,
+      rota: "/beneficio/:id"
+    });
+    res.status(500).json({ error: err.message });
   }
 });
 
-/**
- * POST /api/beneficios
- * Insere um novo benefício
- * Parâmetros: Objeto benefício
- */
-
+// POST novo benefício
 router.post("/", auth, validaBeneficio, async (req, res) => {
-  /*
-            #swagger.tags = ['Benefícios']
-            #swagger.summary = 'POST para cadastrar um novo benefício'
-            #swagger.description = 'Função chamada para executar o POST adicionando um novo benefício'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn({
+        message: "Falha na validação ao cadastrar benefício",
+        errors: errors.array(),
+        rota: "/beneficio"
+      });
       return res.status(400).json({ errors: errors.array() });
     }
     const beneficio = await db.collection(nomeCollection).insertOne(req.body);
-    res.status(201).json(beneficio); //201 é o status created
+    logger.info({
+      message: "Benefício cadastrado com sucesso",
+      beneficio: req.body.nome,
+      rota: "/beneficio"
+    });
+    res.status(201).json(beneficio);
   } catch (err) {
+    logger.error({
+      message: "Erro ao cadastrar benefício",
+      error: err.message,
+      rota: "/beneficio"
+    });
     res.status(500).json({ message: `${err.message} Erro no Server` });
   }
 });
-/**
- * PUT /api/beneficios
- * Altera um benefício pelo _id
- * Parâmetros: Objeto benefício
- */
+
+// PUT benefício por ID
 router.put("/", auth, validaBeneficio, async (req, res) => {
-  /*
-            #swagger.tags = ['Benefícios']
-            #swagger.summary = 'PUT recebendo um único beneficio pelo ID a ser modificado'
-            #swagger.description = 'Função chamada para executar o PUT com um único benefício a ser modificado pelo seu ID'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
-  let idDocumento = req.body._id; //armazenamos o _id do documento
-  delete req.body._id; //removemos o _id do body que foi recebido na req.
+  let idDocumento = req.body._id;
+  delete req.body._id;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn({
+        message: "Falha na validação ao atualizar benefício",
+        errors: errors.array(),
+        id: idDocumento,
+        rota: "/beneficio"
+      });
       return res.status(400).json({ errors: errors.array() });
     }
     const beneficio = await db
@@ -281,26 +289,36 @@ router.put("/", auth, validaBeneficio, async (req, res) => {
         { _id: { $eq: new ObjectId(idDocumento) } },
         { $set: req.body }
       );
-    res.status(202).json(beneficio); //Accepted
+    logger.info({
+      message: "Benefício atualizado com sucesso",
+      id: idDocumento,
+      rota: "/beneficio"
+    });
+    res.status(202).json(beneficio);
   } catch (err) {
+    logger.error({
+      message: "Erro ao atualizar benefício",
+      error: err.message,
+      id: idDocumento,
+      rota: "/beneficio"
+    });
     res.status(500).json({ errors: err.message });
   }
 });
 
+// PUT resgate de benefício (atualiza quantidade)
 router.put("/resgate", auth, validaQuantidade, async (req, res) => {
-  /*
-            #swagger.tags = ['Benefícios']
-            #swagger.summary = 'PUT recebendo o ID do benefício no qual será alterado pelo resgate'
-            #swagger.description = 'Função chamada para executar o PUT com um benefício específico a ser modificado pelo resgate do mesmo'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
-  let idDocumento = req.body._id; //armazenamos o _id do documento
-  delete req.body._id; //removemos o _id do body que foi recebido na req.
+  let idDocumento = req.body._id;
+  delete req.body._id;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn({
+        message: "Falha na validação ao atualizar quantidade do benefício (resgate)",
+        errors: errors.array(),
+        id: idDocumento,
+        rota: "/beneficio/resgate"
+      });
       return res.status(400).json({ errors: errors.array() });
     }
     const beneficio = await db
@@ -309,9 +327,22 @@ router.put("/resgate", auth, validaQuantidade, async (req, res) => {
         { _id: { $eq: new ObjectId(idDocumento) } },
         { $set: { quantidade: req.body.quantidade } }
       );
-    res.status(202).json(beneficio); //Accepted
+    logger.info({
+      message: "Quantidade do benefício atualizada (resgate)",
+      id: idDocumento,
+      quantidade: req.body.quantidade,
+      rota: "/beneficio/resgate"
+    });
+    res.status(202).json(beneficio);
   } catch (err) {
+    logger.error({
+      message: "Erro ao atualizar quantidade do benefício (resgate)",
+      error: err.message,
+      id: idDocumento,
+      rota: "/beneficio/resgate"
+    });
     res.status(500).json({ errors: err.message });
   }
 });
+
 export default router;

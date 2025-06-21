@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import auth from "../middleware/auth.js";
 import { sendPasswordResetEmail } from "../utils/emailService.js";
+import logger from "../config/logger.js"; // Adicionado logger
 
 const router = express.Router();
 const { db, ObjectId } = await connectToDatabase();
@@ -43,7 +44,6 @@ const validaUsuario = [
         .find({ email: { $eq: value } })
         .toArray()
         .then((email) => {
-          //verifica se não existe o ID para garantir que é inclusão
           if (email.length && !req.params.id) {
             return Promise.reject(`o email ${value} já existe!`);
           }
@@ -87,42 +87,57 @@ const validaPontos = [
 //POST de Usuário
 router.post("/", validaUsuario, async (req, res) => {
   /*
-            #swagger.tags = ['Usuário']
-            #swagger.summary = 'Post para cadastrar usuário'
-            #swagger.description = 'Função chamada para executar o POST do usuário com suas devidas validações'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
+    #swagger.tags = ['Usuário']
+    #swagger.summary = 'Post para cadastrar usuário'
+    #swagger.description = 'Função chamada para executar o POST do usuário com suas devidas validações'
+    #swagger.security = [{
+            "apiKeyAuth": []
+        }]
+  */
   const schemaErrors = validationResult(req);
   if (!schemaErrors.isEmpty()) {
+    logger.warn({
+      message: "Falha na validação ao cadastrar usuário",
+      errors: schemaErrors.array(),
+      rota: "/usuario"
+    });
     return res.status(403).json({
       errors: schemaErrors.array(),
     });
   } else {
-    //criptografia da senha
-    //genSalt => impede que 2 senhas iguais tenham resultados iguais
-    const salt = await bcrypt.genSalt(10);
-    req.body.senha = await bcrypt.hash(req.body.senha, salt);
-    //iremos salvar o registro
-    await db
-      .collection(nomeCollection)
-      .insertOne(req.body)
-      .then((result) => res.status(201).send(result))
-      .catch((err) => res.status(400).json(err));
-  } //fecha o else
+    try {
+      const salt = await bcrypt.genSalt(10);
+      req.body.senha = await bcrypt.hash(req.body.senha, salt);
+      const result = await db
+        .collection(nomeCollection)
+        .insertOne(req.body);
+      logger.info({
+        message: "Usuário cadastrado com sucesso",
+        usuario: req.body.email,
+        rota: "/usuario"
+      });
+      res.status(201).send(result);
+    } catch (err) {
+      logger.error({
+        message: "Erro ao cadastrar usuário",
+        error: err.message,
+        rota: "/usuario"
+      });
+      res.status(400).json(err);
+    }
+  }
 });
 
 // GET Usuário
 router.get("/", auth, async (req, res) => {
   /*
-            #swagger.tags = ['Usuário']
-            #swagger.summary = 'GET recebendo todos usuários'
-            #swagger.description = 'Função chamada para executar o GET com todos usuário'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-            */
+    #swagger.tags = ['Usuário']
+    #swagger.summary = 'GET recebendo todos usuários'
+    #swagger.description = 'Função chamada para executar o GET com todos usuário'
+    #swagger.security = [{
+            "apiKeyAuth": []
+        }]
+  */
   try {
     const docs = [];
     await db
@@ -132,8 +147,18 @@ router.get("/", auth, async (req, res) => {
       .forEach((doc) => {
         docs.push(doc);
       });
+    logger.info({
+      message: "Listagem de usuários consultada",
+      quantidade: docs.length,
+      rota: "/usuario"
+    });
     res.status(200).json(docs);
   } catch (err) {
+    logger.error({
+      message: "Erro ao obter a listagem dos usuários",
+      error: err.message,
+      rota: "/usuario"
+    });
     res.status(500).json({
       message: "Erro ao obter a listagem dos usuários",
       error: `${err.message}`,
@@ -144,13 +169,13 @@ router.get("/", auth, async (req, res) => {
 router.get("/id/:id", auth, async (req, res) => {
   try {
     /*
-            #swagger.tags = ['Usuário']
-            #swagger.summary = 'GET recebendo usuário pelo ID'
-            #swagger.description = 'Função chamada para executar o GET com o ID de um usuário específico'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
+      #swagger.tags = ['Usuário']
+      #swagger.summary = 'GET recebendo usuário pelo ID'
+      #swagger.description = 'Função chamada para executar o GET com o ID de um usuário específico'
+      #swagger.security = [{
+              "apiKeyAuth": []
+          }]
+    */
     const docs = [];
     await db
       .collection(nomeCollection)
@@ -158,8 +183,18 @@ router.get("/id/:id", auth, async (req, res) => {
       .forEach((doc) => {
         docs.push(doc);
       });
+    logger.info({
+      message: "Usuário consultado pelo ID",
+      id: req.params.id,
+      rota: "/usuario/id/:id"
+    });
     res.status(200).json(docs);
   } catch (err) {
+    logger.error({
+      message: "Erro ao obter o usuário pelo ID",
+      error: err.message,
+      rota: "/usuario/id/:id"
+    });
     res.status(500).json({
       errors: [
         {
@@ -185,13 +220,13 @@ const validaLogin = [
 
 router.get("/pontos", auth, async (req, res) => {
   /*
-            #swagger.tags = ['Usuário']
-            #swagger.summary = 'GET recebendo os pontos do usuário'
-            #swagger.description = 'Função chamada para executar o GET com a pontuação do usuário'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
+    #swagger.tags = ['Usuário']
+    #swagger.summary = 'GET recebendo os pontos do usuário'
+    #swagger.description = 'Função chamada para executar o GET com a pontuação do usuário'
+    #swagger.security = [{
+            "apiKeyAuth": []
+        }]
+  */
   try {
     const docs = [];
     await db
@@ -200,8 +235,18 @@ router.get("/pontos", auth, async (req, res) => {
       .forEach((doc) => {
         docs.push(doc);
       });
+    logger.info({
+      message: "Consulta de pontos do usuário",
+      id: req.usuario.id,
+      rota: "/usuario/pontos"
+    });
     res.status(200).json(docs);
   } catch (err) {
+    logger.error({
+      message: "Erro ao obter a listagem dos pontos do usuário",
+      error: err.message,
+      rota: "/usuario/pontos"
+    });
     res.status(500).json({
       message: "Erro ao obter a listagem dos pontos do usuário",
       error: `${err.message}`,
@@ -211,30 +256,36 @@ router.get("/pontos", auth, async (req, res) => {
 
 router.post("/login", validaLogin, async (req, res) => {
   /*
-            #swagger.tags = ['Usuário']
-            #swagger.summary = 'POST executando o Login do usuário'
-            #swagger.description = 'Função chamada para executar o POST do usuário com suas devidas verificações'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
+    #swagger.tags = ['Usuário']
+    #swagger.summary = 'POST executando o Login do usuário'
+    #swagger.description = 'Função chamada para executar o POST do usuário com suas devidas verificações'
+    #swagger.security = [{
+            "apiKeyAuth": []
+        }]
+  */
   const schemaErrors = validationResult(req);
   if (!schemaErrors.isEmpty()) {
+    logger.warn({
+      message: "Falha na validação ao fazer login",
+      errors: schemaErrors.array(),
+      rota: "/usuario/login"
+    });
     return res.status(403).json({ errors: schemaErrors.array() });
   }
-  //obtendo os dados para o login
   const { email, senha } = req.body;
   try {
-    //verificar se o email existe no Mongodb
     let usuario = await db
       .collection(nomeCollection)
       .find({ email })
       .limit(1)
       .toArray();
-    //Se o array estiver vazio, é que o email não existe
-    if (!usuario.length)
+    if (!usuario.length) {
+      logger.warn({
+        message: "Tentativa de login com email não cadastrado",
+        email,
+        rota: "/usuario/login"
+      });
       return res.status(404).json({
-        //not found
         errors: [
           {
             value: `${email}`,
@@ -243,11 +294,15 @@ router.post("/login", validaLogin, async (req, res) => {
           },
         ],
       });
-    //Se o email existir, comparamos se a senha está correta
+    }
     const isMatch = await bcrypt.compare(senha, usuario[0].senha);
-    if (!isMatch)
+    if (!isMatch) {
+      logger.warn({
+        message: "Tentativa de login com senha incorreta",
+        email,
+        rota: "/usuario/login"
+      });
       return res.status(403).json({
-        //forbidden
         errors: [
           {
             value: "senha",
@@ -256,15 +311,28 @@ router.post("/login", validaLogin, async (req, res) => {
           },
         ],
       });
+    }
     const redirectUrl =
       usuario[0].tipo === "Admin" ? "menu.html" : "menuUser.html";
-    //Iremos gerar o token JWT
     jwt.sign(
       { usuario: { id: usuario[0]._id, tipo: usuario[0].tipo } },
       process.env.SECRET_KEY,
       { expiresIn: process.env.EXPIRES_IN },
       (err, token) => {
-        if (err) throw err;
+        if (err) {
+          logger.error({
+            message: "Erro ao gerar token JWT no login",
+            error: err.message,
+            rota: "/usuario/login"
+          });
+          throw err;
+        }
+        logger.info({
+          message: "Login realizado com sucesso",
+          email,
+          tipo: usuario[0].tipo,
+          rota: "/usuario/login"
+        });
         res.status(200).json({
           access_token: token,
           redirect_url: redirectUrl,
@@ -272,24 +340,34 @@ router.post("/login", validaLogin, async (req, res) => {
       }
     );
   } catch (e) {
-    console.error(e);
+    logger.error({
+      message: "Erro ao realizar login",
+      error: e.message,
+      rota: "/usuario/login"
+    });
+    res.status(500).json({ error: "Erro ao realizar login", details: e.message });
   }
 });
 
 router.put("/pontos", auth, validaPontos, async (req, res) => {
   /*
-            #swagger.tags = ['Usuário']
-            #swagger.summary = 'PUT recebendo a pontuação do usuário'
-            #swagger.description = 'Função chamada para executar o PUT com a pontuação do usuário a ser modificada'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
-  let idDocumento = req.usuario.id; //armazenamos o _id do documento
-  delete req.body._id; //removemos o _id do body que foi recebido na req.
+    #swagger.tags = ['Usuário']
+    #swagger.summary = 'PUT recebendo a pontuação do usuário'
+    #swagger.description = 'Função chamada para executar o PUT com a pontuação do usuário a ser modificada'
+    #swagger.security = [{
+            "apiKeyAuth": []
+        }]
+  */
+  let idDocumento = req.usuario.id;
+  delete req.body._id;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn({
+        message: "Falha na validação ao atualizar pontos",
+        errors: errors.array(),
+        rota: "/usuario/pontos"
+      });
       return res.status(400).json({ errors: errors.array() });
     }
     const usuario = await db
@@ -298,27 +376,42 @@ router.put("/pontos", auth, validaPontos, async (req, res) => {
         { _id: { $eq: new ObjectId(idDocumento) } },
         { $set: { pontos: req.body.pontos } }
       );
-    res.status(202).json(usuario); //Accepted
+    logger.info({
+      message: "Pontos do usuário atualizados",
+      id: idDocumento,
+      pontos: req.body.pontos,
+      rota: "/usuario/pontos"
+    });
+    res.status(202).json(usuario);
   } catch (err) {
+    logger.error({
+      message: "Erro ao atualizar pontos do usuário",
+      error: err.message,
+      rota: "/usuario/pontos"
+    });
     res.status(500).json({ errors: err.message });
   }
 });
 
 router.put("/pontosPut", auth, validaPontos, async (req, res) => {
   /*
-            #swagger.tags = ['Usuário']
-            #swagger.summary = 'PUT recebendo a pontuação do usuário'
-            #swagger.description = 'Função chamada para executar o PUT com a pontuação do usuário afim de ser modificada na pagina de transação'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
-
-  let idDocumento = req.body._id; //armazenamos o _id do documento
-  delete req.body._id; //removemos o _id do body que foi recebido na req.
+    #swagger.tags = ['Usuário']
+    #swagger.summary = 'PUT recebendo a pontuação do usuário'
+    #swagger.description = 'Função chamada para executar o PUT com a pontuação do usuário afim de ser modificada na pagina de transação'
+    #swagger.security = [{
+            "apiKeyAuth": []
+        }]
+  */
+  let idDocumento = req.body._id;
+  delete req.body._id;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn({
+        message: "Falha na validação ao atualizar pontos (pontosPut)",
+        errors: errors.array(),
+        rota: "/usuario/pontosPut"
+      });
       return res.status(400).json({ errors: errors.array() });
     }
     const usuario = await db
@@ -327,59 +420,106 @@ router.put("/pontosPut", auth, validaPontos, async (req, res) => {
         { _id: { $eq: new ObjectId(idDocumento) } },
         { $set: { pontos: req.body.pontos } }
       );
-    res.status(202).json(usuario); //Accepted
+    logger.info({
+      message: "Pontos do usuário atualizados (pontosPut)",
+      id: idDocumento,
+      pontos: req.body.pontos,
+      rota: "/usuario/pontosPut"
+    });
+    res.status(202).json(usuario);
   } catch (err) {
+    logger.error({
+      message: "Erro ao atualizar pontos do usuário (pontosPut)",
+      error: err.message,
+      rota: "/usuario/pontosPut"
+    });
     res.status(500).json({ errors: err.message });
   }
 });
 
 router.delete("/:id", auth, async (req, res) => {
   /*
-            #swagger.tags = ['Usuarios']
-            #swagger.summary = 'DELETE recebendo um usuario pelo ID'
-            #swagger.description = 'Função chamada para executar o DELETE de apenas um usuário pelo seu ID'
-            #swagger.security = [{
-                    "apiKeyAuth": []
-                }]
-        */
-  const result = await db.collection(nomeCollection).deleteOne({
-    _id: { $eq: new ObjectId(req.params.id) },
-  });
-  if (result.deletedCount === 0) {
-    res.status(404).json({
-      errors: [
-        {
-          value: `Não há nenhum usuário com o id ${req.params.id}`,
-          msg: "Erro ao excluir o usuário",
-          param: "/:id",
-        },
-      ],
+    #swagger.tags = ['Usuarios']
+    #swagger.summary = 'DELETE recebendo um usuario pelo ID'
+    #swagger.description = 'Função chamada para executar o DELETE de apenas um usuário pelo seu ID'
+    #swagger.security = [{
+            "apiKeyAuth": []
+        }]
+  */
+  try {
+    const result = await db.collection(nomeCollection).deleteOne({
+      _id: { $eq: new ObjectId(req.params.id) },
     });
-  } else {
-    res.status(200).send(result);
+    if (result.deletedCount === 0) {
+      logger.warn({
+        message: "Tentativa de exclusão de usuário não encontrado",
+        id: req.params.id,
+        rota: "/usuario/:id"
+      });
+      res.status(404).json({
+        errors: [
+          {
+            value: `Não há nenhum usuário com o id ${req.params.id}`,
+            msg: "Erro ao excluir o usuário",
+            param: "/:id",
+          },
+        ],
+      });
+    } else {
+      logger.info({
+        message: "Usuário excluído com sucesso",
+        id: req.params.id,
+        rota: "/usuario/:id"
+      });
+      res.status(200).send(result);
+    }
+  } catch (err) {
+    logger.error({
+      message: "Erro ao excluir usuário",
+      error: err.message,
+      id: req.params.id,
+      rota: "/usuario/:id"
+    });
+    res.status(500).json({ error: err.message });
   }
 });
 
 router.get("/me", auth, async (req, res) => {
   /*
-        #swagger.tags = ['Usuário']
-        #swagger.summary = 'GET do usuário logado'
-        #swagger.description = 'Retorna os dados do usuário autenticado pelo token JWT'
-        #swagger.security = [{
-                "apiKeyAuth": []
-            }]
-    */
+    #swagger.tags = ['Usuário']
+    #swagger.summary = 'GET do usuário logado'
+    #swagger.description = 'Retorna os dados do usuário autenticado pelo token JWT'
+    #swagger.security = [{
+            "apiKeyAuth": []
+        }]
+  */
   try {
     const usuario = await db
       .collection(nomeCollection)
       .findOne({ _id: new ObjectId(req.usuario.id) }, { projection: { senha: 0 } });
 
     if (!usuario) {
+      logger.warn({
+        message: "Usuário logado não encontrado",
+        id: req.usuario.id,
+        rota: "/usuario/me"
+      });
       return res.status(404).json({ msg: "Usuário não encontrado" });
     }
 
+    logger.info({
+      message: "Consulta de dados do usuário logado",
+      id: req.usuario.id,
+      rota: "/usuario/me"
+    });
     res.status(200).json(usuario);
   } catch (err) {
+    logger.error({
+      message: "Erro ao buscar dados do usuário logado",
+      error: err.message,
+      id: req.usuario.id,
+      rota: "/usuario/me"
+    });
     res.status(500).json({
       msg: "Erro ao buscar dados do usuário logado",
       error: err.message,
@@ -405,6 +545,11 @@ router.put("/senha", auth, [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    logger.warn({
+      message: "Falha na validação ao atualizar senha",
+      errors: errors.array(),
+      rota: "/usuario/senha"
+    });
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -414,11 +559,21 @@ router.put("/senha", auth, [
   try {
     const usuario = await db.collection(nomeCollection).findOne({ _id: new ObjectId(userId) });
     if (!usuario) {
+      logger.warn({
+        message: "Usuário não encontrado ao tentar atualizar senha",
+        id: userId,
+        rota: "/usuario/senha"
+      });
       return res.status(404).json({ msg: "Usuário não encontrado" });
     }
 
     const senhaCorreta = await bcrypt.compare(senhaAtual, usuario.senha);
     if (!senhaCorreta) {
+      logger.warn({
+        message: "Senha atual incorreta ao tentar atualizar senha",
+        id: userId,
+        rota: "/usuario/senha"
+      });
       return res.status(403).json({ msg: "Senha atual incorreta" });
     }
 
@@ -430,14 +585,23 @@ router.put("/senha", auth, [
       { $set: { senha: senhaHash } }
     );
 
+    logger.info({
+      message: "Senha atualizada com sucesso",
+      id: userId,
+      rota: "/usuario/senha"
+    });
     res.status(200).json({ msg: "Senha atualizada com sucesso" });
   } catch (err) {
+    logger.error({
+      message: "Erro ao atualizar a senha",
+      error: err.message,
+      id: userId,
+      rota: "/usuario/senha"
+    });
     res.status(500).json({ msg: "Erro ao atualizar a senha", error: err.message });
   }
 });
 
-
-// Substituir a rota de forgot-password existente com a versão adaptada
 router.post("/forgot-password", [
   check("email")
     .not()
@@ -454,77 +618,82 @@ router.post("/forgot-password", [
   */
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    logger.warn({
+      message: "Falha na validação ao solicitar recuperação de senha",
+      errors: errors.array(),
+      rota: "/usuario/forgot-password"
+    });
     return res.status(400).json({ errors: errors.array() });
   }
 
   const { email } = req.body;
 
   try {
-    // Check if email exists
     const usuario = await db.collection(nomeCollection).findOne({ email });
-    
     if (!usuario) {
+      logger.warn({
+        message: "Email não encontrado ao solicitar recuperação de senha",
+        email,
+        rota: "/usuario/forgot-password"
+      });
       return res.status(404).json({
         success: false,
         message: 'Email não encontrado no sistema.'
       });
     }
 
-    // Generate a random temporary password
     const tempPassword = Math.random().toString(36).slice(-8);
-    
-    // Hash the temporary password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
-    
-    // Calculate expiration (1 hour from now)
     const expiracao = new Date();
     expiracao.setHours(expiracao.getHours() + 1);
-    
-    // Update the user's password in the database
+
     await db.collection(nomeCollection).updateOne(
       { _id: usuario._id },
       { $set: { 
         senha: hashedPassword,
-        resetPasswordToken: true,  // Flag to indicate this is a temporary password
+        resetPasswordToken: true,
         resetPasswordExpires: expiracao
       }}
     );
 
     try {
-      // Send the email with the temporary password
       await sendPasswordResetEmail(email, tempPassword);
-      
-      // For development: continue showing the password in console
-      console.log(`Senha temporária gerada para ${email}: ${tempPassword}`);
-      
-      return res.status(200).json({
+      logger.info({
+        message: "Senha temporária enviada por email",
+        email,
+        rota: "/usuario/forgot-password"
+      });
+      res.status(200).json({
         success: true,
         message: 'Um email com instruções de recuperação de senha foi enviado para o seu endereço de email.'
       });
     } catch (emailError) {
-      // If there's an error sending the email, log the error but don't fail the request
-      console.error('Erro ao enviar email:', emailError);
-      
-      // Even with email error, return success (to avoid revealing internal issues)
-      console.log(`IMPORTANTE: Falha no envio do email. Senha temporária para ${email}: ${tempPassword}`);
-      
-      return res.status(200).json({
+      logger.error({
+        message: "Erro ao enviar email de recuperação de senha",
+        error: emailError.message,
+        email,
+        rota: "/usuario/forgot-password"
+      });
+      res.status(200).json({
         success: true,
         message: 'Um email com instruções de recuperação de senha foi enviado para o seu endereço de email.'
-        // In production, you might want to add support contact here
       });
     }
   } catch (err) {
-    console.error('Erro ao processar solicitação de recuperação de senha:', err);
-    return res.status(500).json({ 
+    logger.error({
+      message: "Erro ao processar solicitação de recuperação de senha",
+      error: err.message,
+      email,
+      rota: "/usuario/forgot-password"
+    });
+    res.status(500).json({ 
       success: false,
       message: 'Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente mais tarde.'
     });
   }
 });
 
-// Route for user to reset password after logging in with temporary password
 router.post("/reset-password", auth, [
   check("novaSenha")
     .not()
@@ -552,6 +721,11 @@ router.post("/reset-password", auth, [
   */
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    logger.warn({
+      message: "Falha na validação ao redefinir senha",
+      errors: errors.array(),
+      rota: "/usuario/reset-password"
+    });
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -559,18 +733,19 @@ router.post("/reset-password", auth, [
   const userId = req.usuario.id;
 
   try {
-    // Get user to check if this is a reset password flow
     const usuario = await db.collection(nomeCollection).findOne({ _id: new ObjectId(userId) });
-    
     if (!usuario) {
+      logger.warn({
+        message: "Usuário não encontrado ao redefinir senha",
+        id: userId,
+        rota: "/usuario/reset-password"
+      });
       return res.status(404).json({ msg: "Usuário não encontrado" });
     }
-    
-    // Hash the new password
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(novaSenha, salt);
-    
-    // Update the user's password and remove reset flags
+
     await db.collection(nomeCollection).updateOne(
       { _id: new ObjectId(userId) },
       { 
@@ -578,17 +753,26 @@ router.post("/reset-password", auth, [
         $unset: { resetPasswordToken: "", resetPasswordExpires: "" }
       }
     );
-    
+
+    logger.info({
+      message: "Senha redefinida com sucesso",
+      id: userId,
+      rota: "/usuario/reset-password"
+    });
     res.status(200).json({ msg: "Senha alterada com sucesso" });
-    
+
   } catch (err) {
-    console.error(err);
+    logger.error({
+      message: "Erro ao redefinir a senha",
+      error: err.message,
+      id: userId,
+      rota: "/usuario/reset-password"
+    });
     res.status(500).json({ 
       msg: "Erro ao redefinir a senha", 
       error: err.message 
     });
   }
 });
-
 
 export default router;
