@@ -12,7 +12,7 @@ const { PORT } = process.env;
 // ✅ MIDDLEWARE CORS — deve vir antes das rotas
 app.use(cors({
   origin: ["http://18.215.24.30", 
-    "http://ecosrev.duckdns.org"], 
+    "http://ecosrev.duckdns.org",'http://35.173.89.145'], 
   credentials: true,
 }));
 
