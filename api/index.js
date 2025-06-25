@@ -11,8 +11,7 @@ const { PORT } = process.env;
 
 // ✅ MIDDLEWARE CORS — deve vir antes das rotas
 app.use(cors({
-  origin: '*', 
-  credentials: true,
+  origin: '*'
 }));
 
 app.use(express.json()); // Parse do JSON
