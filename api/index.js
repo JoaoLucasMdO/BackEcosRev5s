@@ -62,6 +62,6 @@ app.use("/api/usuario", RotasUsuarios);
 app.use("/api/hist", histRouter);
 
 // Listen
-app.listen(PORT, function () {
+app.listen(PORT,'0.0.0.0', function () {
   console.log(`💻Servidor rodando na porta ${PORT}`);
 });
