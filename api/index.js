@@ -63,8 +63,3 @@ const httpsOptions = {
 https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', function () {
   console.log(`💻Servidor HTTPS rodando na porta ${PORT}`);
 });
-
-// Inicia o servidor HTTP
-app.listen(80, '0.0.0.0', function () {
-  console.log(`💻Servidor HTTP rodando na porta 80`);
-});
