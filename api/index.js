@@ -18,6 +18,7 @@ app.use(express.json());
 import RotasBeneficio from "./routes/beneficio.js";
 import RotasUsuarios from "./routes/usuario.js";
 import histRouter from "./routes/histRouter.js";
+import bucketRouter from "./routes/bucket.js";
 
 // Conteúdo público
 app.use(express.static("public"));
@@ -52,6 +53,7 @@ app.get("/api", (req, res) => {
 app.use("/api/beneficio", RotasBeneficio);
 app.use("/api/usuario", RotasUsuarios);
 app.use("/api/hist", histRouter);
+app.use("/api", bucketRouter);
 
 // HTTPS options
 const httpsOptions = {
