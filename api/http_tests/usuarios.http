@@ -1,5 +1,5 @@
 // Teste do endpoint dos usuários
-@baseURL = http://localhost:3000/api/usuario
+@baseURL = http://localhost:4000/api/usuario
 
 ###
 POST {{baseURL}}
@@ -17,7 +17,7 @@ Content-Type: application/json
 // GET - Lista todos os usuários
 GET {{baseURL}}
 Content-Type: application/json
-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoiNjY0NTUzNDY3OTBiYWI0YzhkNTNiNGFhIiwidGlwbyI6IkFkbWluIn0sImlhdCI6MTc0ODM3ODgwNywiZXhwIjoxNzQ4NDY1MjA3fQ.0B1uIR7aTKuBAuvnHCjg5rAJeCK3LiyfYxnT14zjXeQ
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvIjp7ImlkIjoyLCJ0aXBvIjoiQWRtaW4ifSwiaWF0IjoxNzU4Mzc3ODM3LCJleHAiOjE3NTgzODE0Mzd9.LiwdBiAU9dbr8F2nKBBDcBpoA-nhKDUPtQSbHM5kNNo
 
 ###
 

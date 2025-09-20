@@ -1,13 +1,19 @@
 import express from "express";
-import { connectToDatabase } from "../utils/mongodb.js";
 import { check, validationResult } from "express-validator";
 import auth from "../middleware/auth.js";
 import { isAfter } from "date-fns";
-import logger from "../config/logger.js"; // Adicione o logger
+import {
+  findAllBeneficios,
+  findBeneficiosGt,
+  findBeneficioById,
+  findBeneficioByNome,
+  deleteBeneficioById,
+  insertBeneficio,
+  updateBeneficio,
+  updateBeneficioQuantidade
+} from "../utils/beneficioDb.js";
 
 const router = express.Router();
-const { db, ObjectId } = await connectToDatabase();
-const nomeCollection = "beneficio";
 
 const validaBeneficio = [
   check("nome")
@@ -63,28 +69,13 @@ const validaQuantidade = [
 router.get("/", auth, async (req, res) => {
   const { limit, skip, order } = req.query;
   try {
-    const docs = [];
-    await db
-      .collection(nomeCollection)
-      .find()
-      .limit(parseInt(limit) || 10)
-      .skip(parseInt(skip) || 0)
-      .sort({ order: 1 })
-      .forEach((doc) => {
-        docs.push(doc);
-      });
-    logger.info({
-      message: "Listagem de benefícios consultada",
-      quantidade: docs.length,
-      rota: "/beneficio"
+    const docs = await findAllBeneficios({
+      limit: limit || 10,
+      skip: skip || 0,
+      order: order || "id"
     });
     res.status(200).json(docs);
   } catch (err) {
-    logger.error({
-      message: "Erro ao obter a listagem dos benefícios",
-      error: err.message,
-      rota: "/beneficio"
-    });
     res.status(500).json({
       message: "Erro ao obter a listagem dos benefícios",
       error: `${err.message}`,
@@ -96,28 +87,13 @@ router.get("/", auth, async (req, res) => {
 router.get("/gt", auth, async (req, res) => {
   const { limit, skip, order } = req.query;
   try {
-    const docs = [];
-    await db
-      .collection(nomeCollection)
-      .find({ $or: [{ pontos: { $gt: 200 } }, { pontos: { $lt: 1000 } }] })
-      .limit(parseInt(limit) || 10)
-      .skip(parseInt(skip) || 0)
-      .sort({ order: 1 })
-      .forEach((doc) => {
-        docs.push(doc);
-      });
-    logger.info({
-      message: "Listagem de benefícios (filtro gt) consultada",
-      quantidade: docs.length,
-      rota: "/beneficio/gt"
+    const docs = await findBeneficiosGt({
+      limit: limit || 10,
+      skip: skip || 0,
+      order: order || "id"
     });
     res.status(200).json(docs);
   } catch (err) {
-    logger.error({
-      message: "Erro ao obter a listagem dos benefícios (filtro gt)",
-      error: err.message,
-      rota: "/beneficio/gt"
-    });
     res.status(500).json({
       message: "Erro ao obter a listagem dos benefícios",
       error: `${err.message}`,
@@ -128,26 +104,12 @@ router.get("/gt", auth, async (req, res) => {
 // GET benefício por ID
 router.get("/id/:id", auth, async (req, res) => {
   try {
-    const docs = [];
-    await db
-      .collection(nomeCollection)
-      .find({ _id: { $eq: new ObjectId(req.params.id) } }, {})
-      .forEach((doc) => {
-        docs.push(doc);
-      });
-    logger.info({
-      message: "Benefício consultado pelo ID",
-      id: req.params.id,
-      rota: "/beneficio/id/:id"
-    });
-    res.status(200).json(docs);
+    const doc = await findBeneficioById(req.params.id);
+    if (!doc) {
+      return res.status(404).json({ msg: "Benefício não encontrado" });
+    }
+    res.status(200).json(doc);
   } catch (err) {
-    logger.error({
-      message: "Erro ao obter o benefício pelo ID",
-      error: err.message,
-      id: req.params.id,
-      rota: "/beneficio/id/:id"
-    });
     res.status(500).json({
       errors: [
         {
@@ -164,29 +126,9 @@ router.get("/id/:id", auth, async (req, res) => {
 router.get("/nome/:filtro", auth, async (req, res) => {
   try {
     const filtro = req.params.filtro.toString();
-    const docs = [];
-    await db
-      .collection(nomeCollection)
-      .find({
-        $or: [{ nome: { $regex: filtro, $options: "i" } }],
-      })
-      .forEach((doc) => {
-        docs.push(doc);
-      });
-    logger.info({
-      message: "Benefícios consultados por filtro de nome",
-      filtro,
-      quantidade: docs.length,
-      rota: "/beneficio/nome/:filtro"
-    });
+    const docs = await findBeneficioByNome(filtro);
     res.status(200).json(docs);
   } catch (err) {
-    logger.error({
-      message: "Erro ao obter o benefício pelo nome",
-      error: err.message,
-      filtro: req.params.filtro,
-      rota: "/beneficio/nome/:filtro"
-    });
     res.status(500).json({
       errors: [
         {
@@ -202,15 +144,8 @@ router.get("/nome/:filtro", auth, async (req, res) => {
 // DELETE benefício por ID
 router.delete("/:id", auth, async (req, res) => {
   try {
-    const result = await db.collection(nomeCollection).deleteOne({
-      _id: { $eq: new ObjectId(req.params.id) },
-    });
-    if (result.deletedCount === 0) {
-      logger.warn({
-        message: "Tentativa de exclusão de benefício não encontrado",
-        id: req.params.id,
-        rota: "/beneficio/:id"
-      });
+    const result = await deleteBeneficioById(req.params.id);
+    if (result.affectedRows === 0) {
       res.status(404).json({
         errors: [
           {
@@ -221,20 +156,9 @@ router.delete("/:id", auth, async (req, res) => {
         ],
       });
     } else {
-      logger.info({
-        message: "Benefício excluído com sucesso",
-        id: req.params.id,
-        rota: "/beneficio/:id"
-      });
-      res.status(200).send(result);
+      res.status(200).send({ msg: "Benefício excluído com sucesso" });
     }
   } catch (err) {
-    logger.error({
-      message: "Erro ao excluir benefício",
-      error: err.message,
-      id: req.params.id,
-      rota: "/beneficio/:id"
-    });
     res.status(500).json({ error: err.message });
   }
 });
@@ -244,103 +168,43 @@ router.post("/", auth, validaBeneficio, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      logger.warn({
-        message: "Falha na validação ao cadastrar benefício",
-        errors: errors.array(),
-        rota: "/beneficio"
-      });
       return res.status(400).json({ errors: errors.array() });
     }
-    const beneficio = await db.collection(nomeCollection).insertOne(req.body);
-    logger.info({
-      message: "Benefício cadastrado com sucesso",
-      beneficio: req.body.nome,
-      rota: "/beneficio"
-    });
-    res.status(201).json(beneficio);
+    const result = await insertBeneficio(req.body);
+    res.status(201).json(result);
   } catch (err) {
-    logger.error({
-      message: "Erro ao cadastrar benefício",
-      error: err.message,
-      rota: "/beneficio"
-    });
     res.status(500).json({ message: `${err.message} Erro no Server` });
   }
 });
 
 // PUT benefício por ID
 router.put("/", auth, validaBeneficio, async (req, res) => {
-  let idDocumento = req.body._id;
-  delete req.body._id;
+  let idDocumento = req.body.id;
+  delete req.body.id;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      logger.warn({
-        message: "Falha na validação ao atualizar benefício",
-        errors: errors.array(),
-        id: idDocumento,
-        rota: "/beneficio"
-      });
       return res.status(400).json({ errors: errors.array() });
     }
-    const beneficio = await db
-      .collection(nomeCollection)
-      .updateOne(
-        { _id: { $eq: new ObjectId(idDocumento) } },
-        { $set: req.body }
-      );
-    logger.info({
-      message: "Benefício atualizado com sucesso",
-      id: idDocumento,
-      rota: "/beneficio"
-    });
-    res.status(202).json(beneficio);
+    const result = await updateBeneficio(idDocumento, req.body);
+    res.status(202).json(result);
   } catch (err) {
-    logger.error({
-      message: "Erro ao atualizar benefício",
-      error: err.message,
-      id: idDocumento,
-      rota: "/beneficio"
-    });
     res.status(500).json({ errors: err.message });
   }
 });
 
 // PUT resgate de benefício (atualiza quantidade)
 router.put("/resgate", auth, validaQuantidade, async (req, res) => {
-  let idDocumento = req.body._id;
-  delete req.body._id;
+  let idDocumento = req.body.id;
+  delete req.body.id;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      logger.warn({
-        message: "Falha na validação ao atualizar quantidade do benefício (resgate)",
-        errors: errors.array(),
-        id: idDocumento,
-        rota: "/beneficio/resgate"
-      });
       return res.status(400).json({ errors: errors.array() });
     }
-    const beneficio = await db
-      .collection(nomeCollection)
-      .updateOne(
-        { _id: { $eq: new ObjectId(idDocumento) } },
-        { $set: { quantidade: req.body.quantidade } }
-      );
-    logger.info({
-      message: "Quantidade do benefício atualizada (resgate)",
-      id: idDocumento,
-      quantidade: req.body.quantidade,
-      rota: "/beneficio/resgate"
-    });
-    res.status(202).json(beneficio);
+    const result = await updateBeneficioQuantidade(idDocumento, req.body.quantidade);
+    res.status(202).json(result);
   } catch (err) {
-    logger.error({
-      message: "Erro ao atualizar quantidade do benefício (resgate)",
-      error: err.message,
-      id: idDocumento,
-      rota: "/beneficio/resgate"
-    });
     res.status(500).json({ errors: err.message });
   }
 });

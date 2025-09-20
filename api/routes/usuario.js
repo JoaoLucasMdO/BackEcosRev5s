@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import auth from "../middleware/auth.js";
 import { sendPasswordResetEmail } from "../utils/emailService.js";
-import logger from "../config/logger.js";
 import {
   findUserByEmail,
   insertUser,
@@ -23,9 +22,6 @@ import {
 
 const router = express.Router();
 
-/************
-* VALIDAÇÕES DO USUÁRIO
-/***********/
 const validaUsuario = [
   check("nome")
     .not()
@@ -95,11 +91,6 @@ const validaPontos = [
 router.post("/", validaUsuario, async (req, res) => {
   const schemaErrors = validationResult(req);
   if (!schemaErrors.isEmpty()) {
-    logger.warn({
-      message: "Falha na validação ao cadastrar usuário",
-      errors: schemaErrors.array(),
-      rota: "/usuario"
-    });
     return res.status(403).json({
       errors: schemaErrors.array(),
     });
@@ -108,18 +99,8 @@ router.post("/", validaUsuario, async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     req.body.senha = await bcrypt.hash(req.body.senha, salt);
     const result = await insertUser(req.body);
-    logger.info({
-      message: "Usuário cadastrado com sucesso",
-      usuario: req.body.email,
-      rota: "/usuario"
-    });
     res.status(201).send(result);
   } catch (err) {
-    logger.error({
-      message: "Erro ao cadastrar usuário",
-      error: err.message,
-      rota: "/usuario"
-    });
     res.status(400).json({ error: err.message });
   }
 });
@@ -128,18 +109,8 @@ router.post("/", validaUsuario, async (req, res) => {
 router.get("/", auth, async (req, res) => {
   try {
     const users = await findAllUsers();
-    logger.info({
-      message: "Listagem de usuários consultada",
-      quantidade: users.length,
-      rota: "/usuario"
-    });
     res.status(200).json(users);
   } catch (err) {
-    logger.error({
-      message: "Erro ao obter a listagem dos usuários",
-      error: err.message,
-      rota: "/usuario"
-    });
     res.status(500).json({
       message: "Erro ao obter a listagem dos usuários",
       error: `${err.message}`,
@@ -152,25 +123,10 @@ router.get("/id/:id", auth, async (req, res) => {
   try {
     const user = await findUserById(req.params.id);
     if (!user) {
-      logger.warn({
-        message: "Usuário não encontrado pelo ID",
-        id: req.params.id,
-        rota: "/usuario/id/:id"
-      });
       return res.status(404).json({ msg: "Usuário não encontrado" });
     }
-    logger.info({
-      message: "Usuário consultado pelo ID",
-      id: req.params.id,
-      rota: "/usuario/id/:id"
-    });
     res.status(200).json(user);
   } catch (err) {
-    logger.error({
-      message: "Erro ao obter o usuário pelo ID",
-      error: err.message,
-      rota: "/usuario/id/:id"
-    });
     res.status(500).json({
       errors: [
         {
@@ -198,18 +154,8 @@ const validaLogin = [
 router.get("/pontos", auth, async (req, res) => {
   try {
     const pontos = await findUserPointsById(req.usuario.id);
-    logger.info({
-      message: "Consulta de pontos do usuário",
-      id: req.usuario.id,
-      rota: "/usuario/pontos"
-    });
     res.status(200).json(pontos);
   } catch (err) {
-    logger.error({
-      message: "Erro ao obter a listagem dos pontos do usuário",
-      error: err.message,
-      rota: "/usuario/pontos"
-    });
     res.status(500).json({
       message: "Erro ao obter a listagem dos pontos do usuário",
       error: `${err.message}`,
@@ -221,22 +167,12 @@ router.get("/pontos", auth, async (req, res) => {
 router.post("/login", validaLogin, async (req, res) => {
   const schemaErrors = validationResult(req);
   if (!schemaErrors.isEmpty()) {
-    logger.warn({
-      message: "Falha na validação ao fazer login",
-      errors: schemaErrors.array(),
-      rota: "/usuario/login"
-    });
     return res.status(403).json({ errors: schemaErrors.array() });
   }
   const { email, senha } = req.body;
   try {
     const usuario = await findUserForLogin(email);
     if (!usuario) {
-      logger.warn({
-        message: "Tentativa de login com email não cadastrado",
-        email,
-        rota: "/usuario/login"
-      });
       return res.status(404).json({
         errors: [
           {
@@ -249,11 +185,6 @@ router.post("/login", validaLogin, async (req, res) => {
     }
     const isMatch = await bcrypt.compare(senha, usuario.senha);
     if (!isMatch) {
-      logger.warn({
-        message: "Tentativa de login com senha incorreta",
-        email,
-        rota: "/usuario/login"
-      });
       return res.status(403).json({
         errors: [
           {
@@ -272,19 +203,8 @@ router.post("/login", validaLogin, async (req, res) => {
       { expiresIn: process.env.EXPIRES_IN },
       (err, token) => {
         if (err) {
-          logger.error({
-            message: "Erro ao gerar token JWT no login",
-            error: err.message,
-            rota: "/usuario/login"
-          });
           throw err;
         }
-        logger.info({
-          message: "Login realizado com sucesso",
-          email,
-          tipo: usuario.tipo,
-          rota: "/usuario/login"
-        });
         res.status(200).json({
           access_token: token,
           redirect_url: redirectUrl,
@@ -292,11 +212,6 @@ router.post("/login", validaLogin, async (req, res) => {
       }
     );
   } catch (e) {
-    logger.error({
-      message: "Erro ao realizar login",
-      error: e.message,
-      rota: "/usuario/login"
-    });
     res.status(500).json({ error: "Erro ao realizar login", details: e.message });
   }
 });
@@ -308,27 +223,11 @@ router.put("/pontos", auth, validaPontos, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      logger.warn({
-        message: "Falha na validação ao atualizar pontos",
-        errors: errors.array(),
-        rota: "/usuario/pontos"
-      });
       return res.status(400).json({ errors: errors.array() });
     }
     await updateUserPoints(idDocumento, req.body.pontos);
-    logger.info({
-      message: "Pontos do usuário atualizados",
-      id: idDocumento,
-      pontos: req.body.pontos,
-      rota: "/usuario/pontos"
-    });
     res.status(202).json({ msg: "Pontos atualizados com sucesso" });
   } catch (err) {
-    logger.error({
-      message: "Erro ao atualizar pontos do usuário",
-      error: err.message,
-      rota: "/usuario/pontos"
-    });
     res.status(500).json({ errors: err.message });
   }
 });
@@ -340,27 +239,11 @@ router.put("/pontosPut", auth, validaPontos, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      logger.warn({
-        message: "Falha na validação ao atualizar pontos (pontosPut)",
-        errors: errors.array(),
-        rota: "/usuario/pontosPut"
-      });
       return res.status(400).json({ errors: errors.array() });
     }
     await updateUserPoints(idDocumento, req.body.pontos);
-    logger.info({
-      message: "Pontos do usuário atualizados (pontosPut)",
-      id: idDocumento,
-      pontos: req.body.pontos,
-      rota: "/usuario/pontosPut"
-    });
     res.status(202).json({ msg: "Pontos atualizados com sucesso" });
   } catch (err) {
-    logger.error({
-      message: "Erro ao atualizar pontos do usuário (pontosPut)",
-      error: err.message,
-      rota: "/usuario/pontosPut"
-    });
     res.status(500).json({ errors: err.message });
   }
 });
@@ -370,11 +253,6 @@ router.delete("/:id", auth, async (req, res) => {
   try {
     const result = await deleteUserById(req.params.id);
     if (result.affectedRows === 0) {
-      logger.warn({
-        message: "Tentativa de exclusão de usuário não encontrado",
-        id: req.params.id,
-        rota: "/usuario/:id"
-      });
       res.status(404).json({
         errors: [
           {
@@ -385,20 +263,9 @@ router.delete("/:id", auth, async (req, res) => {
         ],
       });
     } else {
-      logger.info({
-        message: "Usuário excluído com sucesso",
-        id: req.params.id,
-        rota: "/usuario/:id"
-      });
       res.status(200).send({ msg: "Usuário excluído com sucesso" });
     }
   } catch (err) {
-    logger.error({
-      message: "Erro ao excluir usuário",
-      error: err.message,
-      id: req.params.id,
-      rota: "/usuario/:id"
-    });
     res.status(500).json({ error: err.message });
   }
 });
@@ -408,26 +275,10 @@ router.get("/me", auth, async (req, res) => {
   try {
     const usuario = await findUserMe(req.usuario.id);
     if (!usuario) {
-      logger.warn({
-        message: "Usuário logado não encontrado",
-        id: req.usuario.id,
-        rota: "/usuario/me"
-      });
       return res.status(404).json({ msg: "Usuário não encontrado" });
     }
-    logger.info({
-      message: "Consulta de dados do usuário logado",
-      id: req.usuario.id,
-      rota: "/usuario/me"
-    });
     res.status(200).json(usuario);
   } catch (err) {
-    logger.error({
-      message: "Erro ao buscar dados do usuário logado",
-      error: err.message,
-      id: req.usuario.id,
-      rota: "/usuario/me"
-    });
     res.status(500).json({
       msg: "Erro ao buscar dados do usuário logado",
       error: err.message,
@@ -454,11 +305,6 @@ router.put("/senha", auth, [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    logger.warn({
-      message: "Falha na validação ao atualizar senha",
-      errors: errors.array(),
-      rota: "/usuario/senha"
-    });
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -468,21 +314,11 @@ router.put("/senha", auth, [
   try {
     const usuario = await findUserById(userId);
     if (!usuario) {
-      logger.warn({
-        message: "Usuário não encontrado ao tentar atualizar senha",
-        id: userId,
-        rota: "/usuario/senha"
-      });
       return res.status(404).json({ msg: "Usuário não encontrado" });
     }
 
     const senhaCorreta = await bcrypt.compare(senhaAtual, usuario.senha);
     if (!senhaCorreta) {
-      logger.warn({
-        message: "Senha atual incorreta ao tentar atualizar senha",
-        id: userId,
-        rota: "/usuario/senha"
-      });
       return res.status(403).json({ msg: "Senha atual incorreta" });
     }
 
@@ -491,19 +327,8 @@ router.put("/senha", auth, [
 
     await updateUserPassword(userId, senhaHash);
 
-    logger.info({
-      message: "Senha atualizada com sucesso",
-      id: userId,
-      rota: "/usuario/senha"
-    });
     res.status(200).json({ msg: "Senha atualizada com sucesso" });
   } catch (err) {
-    logger.error({
-      message: "Erro ao atualizar a senha",
-      error: err.message,
-      id: userId,
-      rota: "/usuario/senha"
-    });
     res.status(500).json({ msg: "Erro ao atualizar a senha", error: err.message });
   }
 });
@@ -520,11 +345,6 @@ router.post("/forgot-password", [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    logger.warn({
-      message: "Falha na validação ao solicitar recuperação de senha",
-      errors: errors.array(),
-      rota: "/usuario/forgot-password"
-    });
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -533,11 +353,6 @@ router.post("/forgot-password", [
   try {
     const usuario = await findUserForPasswordReset(email);
     if (!usuario) {
-      logger.warn({
-        message: "Email não encontrado ao solicitar recuperação de senha",
-        email,
-        rota: "/usuario/forgot-password"
-      });
       return res.status(404).json({
         success: false,
         message: 'Email não encontrado no sistema.'
@@ -554,34 +369,17 @@ router.post("/forgot-password", [
 
     try {
       await sendPasswordResetEmail(email, tempPassword);
-      logger.info({
-        message: "Senha temporária enviada por email",
-        email,
-        rota: "/usuario/forgot-password"
-      });
       res.status(200).json({
         success: true,
         message: 'Um email com instruções de recuperação de senha foi enviado para o seu endereço de email.'
       });
     } catch (emailError) {
-      logger.error({
-        message: "Erro ao enviar email de recuperação de senha",
-        error: emailError.message,
-        email,
-        rota: "/usuario/forgot-password"
-      });
       res.status(200).json({
         success: true,
         message: 'Um email com instruções de recuperação de senha foi enviado para o seu endereço de email.'
       });
     }
   } catch (err) {
-    logger.error({
-      message: "Erro ao processar solicitação de recuperação de senha",
-      error: err.message,
-      email,
-      rota: "/usuario/forgot-password"
-    });
     res.status(500).json({
       success: false,
       message: 'Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente mais tarde.'
@@ -609,11 +407,6 @@ router.post("/reset-password", auth, [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    logger.warn({
-      message: "Falha na validação ao redefinir senha",
-      errors: errors.array(),
-      rota: "/usuario/reset-password"
-    });
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -623,11 +416,6 @@ router.post("/reset-password", auth, [
   try {
     const usuario = await findUserById(userId);
     if (!usuario) {
-      logger.warn({
-        message: "Usuário não encontrado ao redefinir senha",
-        id: userId,
-        rota: "/usuario/reset-password"
-      });
       return res.status(404).json({ msg: "Usuário não encontrado" });
     }
 
@@ -636,20 +424,9 @@ router.post("/reset-password", auth, [
 
     await clearPasswordResetToken(userId, hashedPassword);
 
-    logger.info({
-      message: "Senha redefinida com sucesso",
-      id: userId,
-      rota: "/usuario/reset-password"
-    });
     res.status(200).json({ msg: "Senha alterada com sucesso" });
 
   } catch (err) {
-    logger.error({
-      message: "Erro ao redefinir a senha",
-      error: err.message,
-      id: userId,
-      rota: "/usuario/reset-password"
-    });
     res.status(500).json({
       msg: "Erro ao redefinir a senha",
       error: err.message

@@ -1,14 +1,13 @@
 import express from "express";
 import { config } from "dotenv";
 import fs from "fs";
-import https from "https"; // <-- Adicione esta linha
 import swaggerUI from "swagger-ui-express";
 import cors from "cors";
 
 config();
 
 const app = express();
-const { PORT } = process.env || 443;
+const PORT = process.env.PORT || 3000;
 
 // Middleware CORS
 app.use(cors({ origin: '*' }));
@@ -55,13 +54,7 @@ app.use("/api/usuario", RotasUsuarios);
 app.use("/api/hist", histRouter);
 app.use("/api", bucketRouter);
 
-// HTTPS options
-const httpsOptions = {
-  key: fs.readFileSync("./server.key"),
-  cert: fs.readFileSync("./server.cert"),
-};
-
-// Inicia o servidor HTTPS
-https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', function () {
-  console.log(`💻Servidor HTTPS rodando na porta ${PORT}`);
+// Inicia o servidor HTTP
+app.listen(PORT, '0.0.0.0', function () {
+  console.log(`💻Servidor HTTP rodando na porta ${PORT}`);
 });

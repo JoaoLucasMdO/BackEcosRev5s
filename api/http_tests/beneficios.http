@@ -1,5 +1,5 @@
 // Teste da API REST de benefícios
-@baseURL = http://localhost:4000/api/beneficio
+@baseURL = https://localhost:3000/api/beneficio
 
 // GET - Lista todos os benefícios
 GET {{baseURL}}
