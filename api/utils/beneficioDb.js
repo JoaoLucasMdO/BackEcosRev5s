@@ -3,7 +3,7 @@ import { promisePool } from '../config/db.js';
 // Busca todos os benefícios com paginação e ordenação
 export async function findAllBeneficios({ limit = 10, skip = 0, order = 'id' }) {
   const [rows] = await promisePool.query(
-    `SELECT * FROM beneficio ORDER BY ?? ASC LIMIT ? OFFSET ?`,
+    `SELECT * FROM beneficios ORDER BY ?? ASC LIMIT ? OFFSET ?`,
     [order, Number(limit), Number(skip)]
   );
   return rows;
@@ -12,7 +12,7 @@ export async function findAllBeneficios({ limit = 10, skip = 0, order = 'id' }) 
 // Busca benefícios com filtro de pontos (gt/lt)
 export async function findBeneficiosGt({ limit = 10, skip = 0, order = 'id' }) {
   const [rows] = await promisePool.query(
-    `SELECT * FROM beneficio WHERE pontos > 200 OR pontos < 1000 ORDER BY ?? ASC LIMIT ? OFFSET ?`,
+    `SELECT * FROM beneficios WHERE pontos > 200 OR pontos < 1000 ORDER BY ?? ASC LIMIT ? OFFSET ?`,
     [order, Number(limit), Number(skip)]
   );
   return rows;
@@ -21,7 +21,7 @@ export async function findBeneficiosGt({ limit = 10, skip = 0, order = 'id' }) {
 // Busca benefício por ID
 export async function findBeneficioById(id) {
   const [rows] = await promisePool.query(
-    `SELECT * FROM beneficio WHERE id = ?`,
+    `SELECT * FROM beneficios WHERE id = ?`,
     [id]
   );
   return rows[0];
@@ -30,7 +30,7 @@ export async function findBeneficioById(id) {
 // Busca benefícios por nome (filtro)
 export async function findBeneficioByNome(filtro) {
   const [rows] = await promisePool.query(
-    `SELECT * FROM beneficio WHERE nome LIKE ?`,
+    `SELECT * FROM beneficios WHERE nome LIKE ?`,
     [`%${filtro}%`]
   );
   return rows;
@@ -39,7 +39,7 @@ export async function findBeneficioByNome(filtro) {
 // Remove benefício por ID
 export async function deleteBeneficioById(id) {
   const [result] = await promisePool.query(
-    `DELETE FROM beneficio WHERE id = ?`,
+    `DELETE FROM beneficios WHERE id = ?`,
     [id]
   );
   return result;
@@ -49,7 +49,7 @@ export async function deleteBeneficioById(id) {
 export async function insertBeneficio(beneficio) {
   const { nome, endereco, pontos, data, quantidade } = beneficio;
   const [result] = await promisePool.query(
-    `INSERT INTO beneficio (nome, endereco, pontos, data, quantidade) VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO beneficios (nome, endereco, pontos, data, quantidade) VALUES (?, ?, ?, ?, ?)`,
     [nome, endereco, pontos, data, quantidade]
   );
   return { insertId: result.insertId };
@@ -59,7 +59,7 @@ export async function insertBeneficio(beneficio) {
 export async function updateBeneficio(id, beneficio) {
   const { nome, endereco, pontos, data, quantidade } = beneficio;
   const [result] = await promisePool.query(
-    `UPDATE beneficio SET nome = ?, endereco = ?, pontos = ?, data = ?, quantidade = ? WHERE id = ?`,
+    `UPDATE beneficios SET nome = ?, endereco = ?, pontos = ?, data = ?, quantidade = ? WHERE id = ?`,
     [nome, endereco, pontos, data, quantidade, id]
   );
   return result;
@@ -68,7 +68,7 @@ export async function updateBeneficio(id, beneficio) {
 // Atualiza quantidade do benefício (resgate)
 export async function updateBeneficioQuantidade(id, quantidade) {
   const [result] = await promisePool.query(
-    `UPDATE beneficio SET quantidade = ? WHERE id = ?`,
+    `UPDATE beneficios SET quantidade = ? WHERE id = ?`,
     [quantidade, id]
   );
   return result;

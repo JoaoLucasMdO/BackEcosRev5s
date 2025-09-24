@@ -111,7 +111,7 @@ export async function clearPasswordResetToken(id, senha) {
 // Busca usuário autenticado (sem senha)
 export async function findUserMe(id) {
   const [rows] = await promisePool.query(
-    'SELECT id, nome, email, ativo, tipo, pontos FROM usuarios WHERE id = ?',
+    'SELECT id, nome, email, ativo, tipo, pontos, resetPasswordToken FROM usuarios WHERE id = ?',
     [id]
   );
   return rows[0];
