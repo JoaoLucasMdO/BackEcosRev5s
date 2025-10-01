@@ -38,18 +38,16 @@ const validaUsuario = [
     .matches(/^\d+$/)
     .withMessage("O nome não pode conter apenas números"),
   check("email")
-    .not()
-    .isEmpty()
+    .notEmpty()
     .trim()
     .withMessage("É obrigatório informar o email")
-    .isLowercase()
-    .withMessage("Não são permitidas maiúsculas")
+    .toLowerCase() // força o valor para minúsculo
     .isEmail()
     .withMessage("Informe um email válido")
     .custom(async (value, { req }) => {
       const user = await findUserByEmail(value);
       if (user && !req.params.id) {
-        return Promise.reject(`o email ${value} já existe!`);
+        return Promise.reject(`O email ${value} já existe!`);
       }
     }),
   check("senha")
