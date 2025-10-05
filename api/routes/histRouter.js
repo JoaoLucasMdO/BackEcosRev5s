@@ -28,7 +28,19 @@ router.post("/pontos", async (req, res) => {
     await insertHistPontos({ id, pontos, idUsuario, data: brazilDate });
     res.status(200).json({ message: "Histórico de pontos registrado com sucesso." });
   } catch (error) {
-    res.status(500).json({ error: "Erro ao registrar histórico de pontos.", details: error.message });
+    // Detecta erro de chave primária duplicada
+    if (error.code === 'ER_DUP_ENTRY' || error.code === '23505' || error.message.includes('duplicate key') || error.message.includes('UNIQUE constraint')) {
+      return res.status(400).json({ 
+        error: "Este cupom já foi resgatado anteriormente.",
+        code: "DUPLICATE_COUPON"
+      });
+    }
+    
+    console.error("Erro ao registrar histórico de pontos:", error);
+    res.status(500).json({ 
+      error: "Erro ao registrar histórico de pontos.", 
+      details: error.message 
+    });
   }
 });
 
