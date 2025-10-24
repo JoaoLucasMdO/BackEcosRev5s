@@ -21,8 +21,6 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 });
 
-// POST /image - envia um arquivo no campo 'image' e salva metadados no MySQL
-// Rota protegida: associa o upload ao usuário autenticado
 router.post("/image", auth, upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
@@ -43,14 +41,13 @@ router.post("/image", auth, upload.single("image"), async (req, res) => {
 
     const result = await insertImage(meta);
 
-  // Não atualizamos a tabela `usuarios` — usamos apenas a FK em `imgPerfilUsuario` para associar o avatar.
     res.status(201).json({ id: result.insertId, ...meta });
   } catch (err) {
     res.status(500).json({ error: "Erro ao enviar imagem", details: err.message });
   }
 });
 
-// GET /:id - busca metadados pelo id do registro (não pelo public_id)
+
 router.get("/:id", async (req, res) => {
   try {
     const row = await findImageById(req.params.id);
@@ -61,7 +58,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// DELETE /:id - remove registro do banco e também o arquivo do Cloudinary
+
 router.delete("/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -70,13 +67,13 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ error: "Registro não encontrado" });
     }
 
-    // Remove do Cloudinary usando public_id
+
     try {
       if (row.public_id) {
         await cloudinary.uploader.destroy(row.public_id);
       }
     } catch (cloudErr) {
-      // Log do erro e continua para tentar remover metadados do DB
+
       console.error("Erro ao remover do Cloudinary:", cloudErr);
       return res.status(500).json({ error: "Erro ao remover arquivo do Cloudinary", details: cloudErr.message });
     }

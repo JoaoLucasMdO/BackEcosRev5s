@@ -17,7 +17,6 @@ app.use(express.json());
 import RotasBeneficio from "./routes/beneficio.js";
 import RotasUsuarios from "./routes/usuario.js";
 import histRouter from "./routes/histRouter.js";
-import bucketRouter from "./routes/bucket.js";
 import uploadRouter from "./routes/upload.js";
 
 // Conteúdo público
@@ -53,7 +52,6 @@ app.get("/api", (req, res) => {
 app.use("/api/beneficio", RotasBeneficio);
 app.use("/api/usuario", RotasUsuarios);
 app.use("/api/hist", histRouter);
-app.use("/api", bucketRouter);
 app.use("/api/upload", uploadRouter);
 
 // Inicia o servidor HTTP
