@@ -1,3 +1,4 @@
+import { findImageById } from "../utils/uploadDb.js";
 import express from "express";
 import { check, validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
@@ -8,6 +9,7 @@ import { sendPasswordResetEmail } from "../utils/emailService.js";
 import {
   findUserByEmail,
   insertUser,
+  findUserByCpf,
   findAllUsers,
   findUserById,
   findUserPointsById,
@@ -20,6 +22,7 @@ import {
   clearPasswordResetToken,
   findUserMe
 } from "../utils/usuarioDb.js";
+import normalizeCpf from "../utils/normalizeCpf.js";
 
 const router = express.Router();
 
@@ -33,11 +36,24 @@ const validaUsuario = [
     .withMessage("Informe apenas texto")
     .isLength({ min: 3 })
     .withMessage("Informe no mínimo 3 caracteres")
-    .isLength({ max: 100 })
-    .withMessage("Informe no máximo 100 caracteres")
+    .isLength({ max: 150 })
+    .withMessage("Informe no máximo 150 caracteres")
     .not()
     .matches(/^\d+$/)
     .withMessage("O nome não pode conter apenas números"),
+  check("cpf")
+    .not()
+    .isEmpty()
+    .withMessage("É obrigatório informar o CPF")
+  .customSanitizer((value) => normalizeCpf(value))
+    .matches(/^\d{11}$/)
+    .withMessage("Informe um CPF válido com 11 dígitos")
+    .custom(async (value, { req }) => {
+      const user = await findUserByCpf(value);
+      if (user && !req.params.id) {
+        return Promise.reject(`O CPF ${value} já está cadastrado!`);
+      }
+    }),
   check("email")
     .notEmpty()
     .trim()
@@ -45,12 +61,47 @@ const validaUsuario = [
     .toLowerCase() // força o valor para minúsculo
     .isEmail()
     .withMessage("Informe um email válido")
+    .isLength({ max: 120 })
+    .withMessage('Informe no máximo 120 caracteres')
     .custom(async (value, { req }) => {
       const user = await findUserByEmail(value);
       if (user && !req.params.id) {
         return Promise.reject(`O email ${value} já existe!`);
       }
     }),
+  check('celular')
+    .optional({ checkFalsy: true })
+    .isMobilePhone('pt-BR')
+    .withMessage('Informe um número de celular válido'),
+  check('logradouro')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 120 })
+    .withMessage('Logradouro muito longo'),
+  check('numero')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 10 })
+    .withMessage('Número muito longo'),
+  check('complemento')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 50 })
+    .withMessage('Complemento muito longo'),
+  check('bairro')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 80 })
+    .withMessage('Bairro muito longo'),
+  check('cidade')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 100 })
+    .withMessage('Cidade muito longa'),
+  check('estado')
+    .optional({ checkFalsy: true })
+    .isLength({ min: 2, max: 2 })
+    .withMessage('Informe a sigla do estado (2 caracteres)'),
+  check('cep')
+    .optional({ checkFalsy: true })
+    .customSanitizer((value) => normalizeCpf(value))
+    .matches(/^\d{8}$/)
+    .withMessage('Informe um CEP válido com 8 dígitos'),
   check("senha")
     .not()
     .isEmpty()
@@ -85,6 +136,23 @@ const validaPontos = [
     .isInt({ min: 0 })
     .withMessage("Os pontos não podem ser negativos"),
 ];
+
+//GET Avatar do usuário por ID
+router.get("/avatar/:id", async (req, res) => {
+  try {
+    const usuario = await findUserById(req.params.id);
+    if (!usuario || !usuario.imagemPerfilId) {
+      return res.status(404).json({ error: "Usuário ou imagem de perfil não encontrada" });
+    }
+    const imagem = await findImageById(usuario.imagemPerfilId);
+    if (!imagem || !imagem.url) {
+      return res.status(404).json({ error: "Imagem de perfil não encontrada" });
+    }
+    res.status(200).json({ url: imagem.url });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // POST de Usuário
 router.post("/", validaUsuario, async (req, res) => {
