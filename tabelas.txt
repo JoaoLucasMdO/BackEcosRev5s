@@ -1,16 +1,34 @@
-create database ecosrev;
-use ecosrev;
+CREATE TABLE imgPerfilUsuario (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  url TEXT NOT NULL,
+  public_id VARCHAR(255) NOT NULL,
+  originalname VARCHAR(255),
+  mimetype VARCHAR(100),
+  size INT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE usuarios (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  nome VARCHAR(100) NOT NULL,
-  email VARCHAR(100) NOT NULL UNIQUE,
+  nome VARCHAR(150) NOT NULL,
+  cpf CHAR(11) NOT NULL UNIQUE,
+  celular VARCHAR(15),
+  email VARCHAR(120) NOT NULL UNIQUE,
   senha VARCHAR(255) NOT NULL,
+  logradouro VARCHAR(120),
+  numero VARCHAR(10),
+  complemento VARCHAR(50) NULL,
+  bairro VARCHAR(80),
+  cidade VARCHAR(100),
+  estado CHAR(2),
+  cep CHAR(8),
   ativo BOOLEAN DEFAULT TRUE,
   tipo ENUM('Admin', 'Cliente') DEFAULT 'Cliente',
   pontos INT DEFAULT 200,
   resetPasswordToken BOOLEAN DEFAULT NULL,
-  resetPasswordExpires DATETIME DEFAULT NULL
+  resetPasswordExpires DATETIME DEFAULT NULL,
+  imagemPerfilId INT NULL,
+  CONSTRAINT fk_usuarios_imgPerfilUsuario FOREIGN KEY (imagemPerfilId) REFERENCES imgPerfilUsuario(id) ON DELETE SET NULL
 );
 
 CREATE TABLE beneficios (
@@ -47,46 +65,3 @@ CREATE TABLE histTransacoes (
   idUsuario INT NOT NULL,
   FOREIGN KEY (idUsuario) REFERENCES usuarios(id) ON DELETE CASCADE
 );
-
-
-
-select * from usuarios;
-select * from beneficios;
-select * from beneficiosDoUsuario;
-select * from histPontos;
-select * from histTransacoes;
-
-
-SELECT 
-    u.id AS idUsuario,
-    u.nome AS nomeUsuario,
-    b.id AS idBeneficio,
-    b.nome AS nomeBeneficio,
-    b.pontos AS pontosGastos,
-    b.data AS dataBeneficio
-FROM usuarios u
-JOIN beneficiosDoUsuario bu ON u.id = bu.idUsuario
-JOIN beneficios b ON b.id = bu.idBeneficio;
-
-
--- Usuários
-INSERT INTO usuarios (nome, email, senha, tipo, pontos) VALUES
-('João Silva', 'joao@email.com', '123456', 'Cliente', 200),
-('Maria Souza', 'maria@email.com', 'abcdef', 'Cliente', 350),
-('Ana Costa', 'ana@email.com', 'senhaSegura', 'Cliente', 150);
-
--- Benefícios
-INSERT INTO beneficios (nome, endereco, pontos, data, quantidade) VALUES
-('Ingresso Show', 'Rua das Flores, 123', 100, '2025-09-20', 50),
-('Desconto Loja', 'Av. Central, 456', 50, '2025-09-21', 200),
-('Vale-Transporte', 'Terminal Central', 200, '2025-09-22', 100);
-
--- Relacionando usuários com benefícios (beneficiosDoUsuario)
-INSERT INTO beneficiosDoUsuario (idUsuario, idBeneficio) VALUES
-(1, 1), -- João pegou Ingresso Show
-(1, 2), -- João pegou Desconto Loja
-(2, 3), -- Maria pegou Vale-Transporte
-(3, 2); -- Ana pegou Desconto Loja
-
-
-drop database ecosrev;
