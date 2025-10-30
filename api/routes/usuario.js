@@ -20,7 +20,8 @@ import {
   setTemporaryPassword,
   findUserForPasswordReset,
   clearPasswordResetToken,
-  findUserMe
+  findUserMe,
+  updateUserById
 } from "../utils/usuarioDb.js";
 import normalizeCpf from "../utils/normalizeCpf.js";
 
@@ -497,6 +498,103 @@ router.post("/reset-password", auth, [
     res.status(500).json({
       msg: "Erro ao redefinir a senha",
       error: err.message
+    });
+  }
+});
+
+// Validação para atualização de usuário
+const validaAtualizacaoUsuario = [
+  check("nome")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Nome não pode ser vazio")
+    .isAlpha("pt-BR", { ignore: " " })
+    .withMessage("Informe apenas texto")
+    .isLength({ min: 3, max: 150 })
+    .withMessage("Nome deve ter entre 3 e 150 caracteres"),
+  check("cpf")
+    .optional()
+    .customSanitizer((value) => normalizeCpf(value))
+    .matches(/^\d{11}$/)
+    .withMessage("Informe um CPF válido com 11 dígitos")
+    .custom(async (value, { req }) => {
+      const user = await findUserByCpf(value);
+      if (user && user.id !== parseInt(req.usuario.id)) {
+        return Promise.reject(`O CPF ${value} já está cadastrado!`);
+      }
+    }),
+  check("email")
+    .optional()
+    .trim()
+    .toLowerCase()
+    .isEmail()
+    .withMessage("Informe um email válido")
+    .isLength({ max: 120 })
+    .withMessage('Email muito longo')
+    .custom(async (value, { req }) => {
+      const user = await findUserByEmail(value);
+      if (user && user.id !== parseInt(req.usuario.id)) {
+        return Promise.reject(`O email ${value} já está cadastrado!`);
+      }
+    }),
+  check('celular')
+    .optional({ checkFalsy: true })
+    .isMobilePhone('pt-BR')
+    .withMessage('Informe um número de celular válido'),
+  check('logradouro')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 120 })
+    .withMessage('Logradouro muito longo'),
+  check('numero')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 10 })
+    .withMessage('Número muito longo'),
+  check('complemento')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 50 })
+    .withMessage('Complemento muito longo'),
+  check('bairro')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 80 })
+    .withMessage('Bairro muito longo'),
+  check('cidade')
+    .optional({ checkFalsy: true })
+    .isLength({ max: 100 })
+    .withMessage('Cidade muito longa'),
+  check('estado')
+    .optional({ checkFalsy: true })
+    .isLength({ min: 2, max: 2 })
+    .withMessage('Informe a sigla do estado (2 caracteres)'),
+  check('cep')
+    .optional({ checkFalsy: true })
+    .customSanitizer((value) => normalizeCpf(value))
+    .matches(/^\d{8}$/)
+    .withMessage('Informe um CEP válido com 8 dígitos'),
+];
+
+// PUT Atualizar dados do usuário autenticado
+router.put("/me", auth, validaAtualizacaoUsuario, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const userId = req.usuario.id;
+
+  try {
+    const usuario = await findUserById(userId);
+    if (!usuario) {
+      return res.status(404).json({ msg: "Usuário não encontrado" });
+    }
+
+    await updateUserById(userId, req.body);
+    
+    res.status(200).json({ msg: "Dados atualizados com sucesso" });
+  } catch (err) {
+    res.status(500).json({ 
+      msg: "Erro ao atualizar dados do usuário", 
+      error: err.message 
     });
   }
 });

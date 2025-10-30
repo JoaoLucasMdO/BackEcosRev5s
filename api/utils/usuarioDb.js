@@ -157,3 +157,75 @@ export async function findUserMe(id) {
   );
   return rows[0];
 }
+
+// Atualiza dados do usuário por ID
+export async function updateUserById(id, userData) {
+  const fields = [];
+  const values = [];
+
+  // Monta dinamicamente os campos a serem atualizados
+  if (userData.nome !== undefined) {
+    fields.push('nome = ?');
+    values.push(userData.nome);
+  }
+  if (userData.cpf !== undefined) {
+    fields.push('cpf = ?');
+    values.push(normalizeCpf(userData.cpf));
+  }
+  if (userData.celular !== undefined) {
+    fields.push('celular = ?');
+    values.push(userData.celular);
+  }
+  if (userData.email !== undefined) {
+    fields.push('email = ?');
+    values.push(userData.email);
+  }
+  if (userData.logradouro !== undefined) {
+    fields.push('logradouro = ?');
+    values.push(userData.logradouro);
+  }
+  if (userData.numero !== undefined) {
+    fields.push('numero = ?');
+    values.push(userData.numero);
+  }
+  if (userData.complemento !== undefined) {
+    fields.push('complemento = ?');
+    values.push(userData.complemento);
+  }
+  if (userData.bairro !== undefined) {
+    fields.push('bairro = ?');
+    values.push(userData.bairro);
+  }
+  if (userData.cidade !== undefined) {
+    fields.push('cidade = ?');
+    values.push(userData.cidade);
+  }
+  if (userData.estado !== undefined) {
+    fields.push('estado = ?');
+    values.push(userData.estado);
+  }
+  if (userData.cep !== undefined) {
+    fields.push('cep = ?');
+    values.push(normalizeCpf(userData.cep)); // Remove formatação do CEP
+  }
+  if (userData.ativo !== undefined) {
+    fields.push('ativo = ?');
+    values.push(userData.ativo);
+  }
+  if (userData.tipo !== undefined) {
+    fields.push('tipo = ?');
+    values.push(userData.tipo);
+  }
+
+  if (fields.length === 0) {
+    throw new Error('Nenhum campo para atualizar');
+  }
+
+  values.push(id);
+
+  const [result] = await promisePool.query(
+    `UPDATE usuarios SET ${fields.join(', ')} WHERE id = ?`,
+    values
+  );
+  return result;
+}
