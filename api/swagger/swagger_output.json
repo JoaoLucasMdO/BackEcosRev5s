@@ -5,10 +5,10 @@
     "title": "Projeto EcosRev 🍀",
     "description": "➡️Documentação gerada automaticamente pelo módulo <a href='https://github.com/davibaltar/swagger-autogen' target='_blank'>swagger-autogen</a>."
   },
-  "host": "localhost:4000",
+  "host": "backecosrev5s.onrender.com",
   "basePath": "",
   "schemes": [
-    "http"
+    "https"
   ],
   "securityDefinitions": {
     "apiKeyAuth": {
