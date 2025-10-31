@@ -1,0 +1,64 @@
+name: Version & Deploy Backend (Render)
+
+on:
+  push:
+    branches:
+      - main  # dispara quando há push na branch main
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # necessário para gerar tags corretamente
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate version tag (prefix v)
+        id: version
+        uses: phips28/gh-action-bump-version@v10.0.1
+        with:
+          tag-prefix: 'v'  # 👈 prefixo de versão
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show new version
+        run: echo "Nova versão criada: v${{ steps.version.outputs.newTag }}"
+
+  deploy:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build --if-present
+
+      - name: Push to Render branch
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "chore: sync with new version ${{ steps.version.outputs.newTag }}" || echo "No changes to commit"
+          git push origin main
