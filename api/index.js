@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Middleware CORS
-app.use(cors({ origin: '*' }));
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // Import das rotas da aplicação
@@ -54,7 +54,12 @@ app.use("/api/usuario", RotasUsuarios);
 app.use("/api/hist", histRouter);
 app.use("/api/upload", uploadRouter);
 
-// Inicia o servidor HTTP
-app.listen(PORT, '0.0.0.0', function () {
-  console.log(`💻Servidor HTTP rodando na porta ${PORT}`);
-});
+// Inicia o servidor HTTP apenas quando não estiver em ambiente de teste
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, "0.0.0.0", function () {
+    console.log(`💻Servidor HTTP rodando na porta ${PORT}`);
+  });
+}
+
+// Exporta o app para testes com supertest
+export default app;
