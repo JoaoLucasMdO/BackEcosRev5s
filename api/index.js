@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 4000;
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// Import das rotas da aplicação
+// Rotas importadas
 import RotasBeneficio from "./routes/beneficio.js";
 import RotasUsuarios from "./routes/usuario.js";
 import histRouter from "./routes/histRouter.js";
@@ -48,15 +48,18 @@ app.get("/api", (req, res) => {
   });
 });
 
-// Rotas da API
+// Rotas
 app.use("/api/beneficio", RotasBeneficio);
 app.use("/api/usuario", RotasUsuarios);
 app.use("/api/hist", histRouter);
 app.use("/api/upload", uploadRouter);
 
-// Inicia o servidor HTTP apenas quando não estiver em ambiente de teste
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, "0.0.0.0", function () {
+// Inicia o servidor somente fora de ambiente de teste
+if (
+  process.env.NODE_ENV !== "test" &&
+  process.env.NODE_ENV !== "test-child"
+) {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`💻Servidor HTTP rodando na porta ${PORT}`);
   });
 }
