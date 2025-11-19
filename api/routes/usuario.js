@@ -1,3 +1,4 @@
+//usuario.js
 import { findImageById } from "../utils/uploadDb.js";
 import express from "express";
 import { check, validationResult } from "express-validator";

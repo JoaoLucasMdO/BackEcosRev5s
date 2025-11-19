@@ -8,6 +8,7 @@ Content-Type: application/json
 {
     "nome": "Mateus",
     "email": "teste@gmail.com",
+    "cpf": 52014014817,
     "senha": "Teste123@",
     "tipo": "Cliente",
     "pontos": 300

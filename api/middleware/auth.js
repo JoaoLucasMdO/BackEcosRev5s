@@ -1,3 +1,4 @@
+//middleware/auth.js
 import jwt from 'jsonwebtoken'
 
 export default async function auth(req, res, next){
