@@ -5,7 +5,7 @@
   "main": "api/index.js",
   "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "cross-env NODE_ENV=test jest --runInBand",
     "start": "node ./api/index.js",
     "dev": "nodemon api/index.js",
     "doc": "node swagger.js"
@@ -40,6 +40,7 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/supertest": "^6.0.3",
+    "cross-env": "^10.1.0",
     "jest": "^29.7.0",
     "nodemo": "^1.0.0",
     "nodemon": "^3.1.0",

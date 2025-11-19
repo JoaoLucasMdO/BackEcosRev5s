@@ -25,17 +25,23 @@ app.disable("x-powered-by");
 app.use("/favicon.ico", express.static("public/images/logo-api.png"));
 
 // Swagger
-const CSS_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const swaggerPath = path.join(__dirname, "swagger", "swagger_output.json");
+
 app.use(
   "/api/doc",
   swaggerUI.serve,
   swaggerUI.setup(
-    JSON.parse(fs.readFileSync("./api/swagger/swagger_output.json")),
+    JSON.parse(fs.readFileSync(swaggerPath)),
     {
       customCss:
         ".swagger-ui .opblock .opblock-summary-path-description-wrapper { align-items: center; display: flex; flex-wrap: wrap; gap: 0 10px; padding: 0 10px; width: 100%; }",
-      customCssUrl: CSS_URL,
+      // customCssUrl removido
     }
   )
 );
@@ -54,15 +60,25 @@ app.use("/api/usuario", RotasUsuarios);
 app.use("/api/hist", histRouter);
 app.use("/api/upload", uploadRouter);
 
-// Inicia o servidor somente fora de ambiente de teste
-if (
-  process.env.NODE_ENV !== "test" &&
-  process.env.NODE_ENV !== "test-child"
-) {
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`💻Servidor HTTP rodando na porta ${PORT}`);
+// Inicia o servidor HTTP apenas quando não estiver em ambiente de teste
+if (process.env.NODE_ENV !== "test") {
+  const swaggerData = JSON.parse(fs.readFileSync(swaggerPath));
+
+  app.use(
+    "/api/doc",
+    swaggerUI.serve,
+    swaggerUI.setup(swaggerData, {
+      customCss:
+        ".swagger-ui .opblock .opblock-summary-path-description-wrapper { align-items: center; display: flex; flex-wrap: wrap; gap: 0 10px; padding: 0 10px; width: 100%; }",
+    })
+  );
+
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
   });
 }
+
+
 
 // Exporta o app para testes com supertest
 export default app;
