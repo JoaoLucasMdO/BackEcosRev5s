@@ -1,0 +1,30 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout do código
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Configurar versão do Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"   # ou 20, se preferir
+
+      # 3. Instalar dependências
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Rodar testes com Jest
+      - name: Run tests
+        run: npm test
